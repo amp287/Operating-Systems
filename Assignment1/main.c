@@ -7,7 +7,10 @@ enum Algo {fcfs, sjf, rr};
 typedef struct PROCESS{
 	char *name;
 	int arrival;
+	// time to completion
 	int burst;
+	// time a process has ran
+	int time_ran;
 	struct PROCESS *next;
 } PROCESS;
 
@@ -30,7 +33,6 @@ int parse(FILE *in){
 	while(fscanf(in, "%s", command)){
 		if(strcmp(command, "processcount") == 0){
 			fscanf(in, "%d", &process_count);
-			queue = malloc(sizeof(PROCESS) * process_count);
 		} else if(strcmp(command, "runfor") == 0){
 			fscanf(in, "%d", &run_for);
 		} else if(strcmp(command, "use") == 0){
@@ -51,6 +53,7 @@ int parse(FILE *in){
 			PROCESS *itr, *prev = NULL;
 
 			new_process->next = NULL;
+			new_process->time_ran = 0;
 
 			fscanf(in, "%s %s", command, name);
 			new_process->name = malloc(strlen(name) + 1);
@@ -84,9 +87,57 @@ int parse(FILE *in){
 	}
 }
 
+int round_robin(){
+	PROCESS *itr;
+	int i;
+
+	for(i = 0; i < run_for; i++){
+			//Arrival
+		if(arrived_queue != NULL && arrived_queue->arrival == i){
+			if(queue == NULL){
+				queue = arrived_queue;
+				arrived_queue = arrived_queue->next;
+				queue->next = NULL;
+				printf("Time %d: %s arrived\n", i, queue->name);
+			} else {
+				for(itr = queue; itr->next != NULL; itr = itr->next);
+				itr->next = arrived_queue;
+				arrived_queue = arrived_queue->next;
+				itr->next->next = NULL;
+				printf("Time %d: %s arrived\n", i, itr->next->name);
+			}
+		}
+
+		//Idle
+		if(queue == NULL) { printf("Time %d: Idle\n", i); continue;}
+
+		// Process finished
+		if(queue->time_ran == queue->burst){
+			printf("%d %d", queue->time_ran, queue->burst);
+			printf("Time %d: %s finished\n", i, queue->name);
+
+			queue = queue->next;
+
+			if(queue)
+				printf("Time %d: %s selected (burst %d)\n", i, queue->name, queue->burst);
+		}
+
+		// Interrupt
+		if(queue->time_ran != 0 && !(queue->time_ran % quantum) && queue->next != NULL){
+			for(itr = queue; itr->next != NULL; itr = itr->next);
+			itr->next = queue;
+			queue = queue->next;
+			printf("Time %d: %s selected\n", i, queue->name);
+		}
+	}
+}
+
 int main(int argv, char *argc[]){
 	FILE *in;
 	PROCESS *itr;
+	arrived_queue = NULL;
+	queue = NULL;
+
 	if(argv < 2){
 		printf("Error: Invalid Arguments");
 		return -1;
@@ -108,7 +159,7 @@ int main(int argv, char *argc[]){
 		printf("Arrival: %d ", itr->arrival);
 		printf("Burst: %d\n", itr->burst);
 	}
-
+	round_robin();
 	return 0;
 
 }
