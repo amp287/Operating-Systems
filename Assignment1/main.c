@@ -93,9 +93,92 @@ int parse(FILE *in){
 	}
 }
 
+int First_Come_First_Serve()
+{
+	PROCESS *itr;
+	FILE *out;
+	out = fopen("processes.out", "w");
+	int i;
+	fprintf(out, "%d processes\n", process_count);
+	fprintf(out, "Using: %s\n\n", algo_strings[algorithm]);
+
+	for(i = 0; i < run_for; i++) 
+	{
+		if(arrived_queue != NULL && arrived_queue->arrival == i) 
+		{
+			if(queue == NULL) 
+			{
+				queue = arrived_queue;
+				arrived_queue = arrived_queue->next;
+				queue->next = NULL;
+				fprintf(out, "Time %d: %s arrived\n", i, queue->name);
+				fprintf(out, "Time %d: %s selected (burst %d)\n", i, queue->name, queue->burst);
+			} 
+
+			else 
+			{
+				for(itr = queue; itr->next != NULL; itr = itr->next);
+				itr->next = arrived_queue;
+				arrived_queue = arrived_queue->next;
+				itr->next->next = NULL;
+				fprintf(out, "Time %d: %s arrived\n", i, itr->next->name);
+			}
+		}
+
+		if(queue && queue->burst == 0)
+		{
+			fprintf(out, "Time %d: %s finished\n", i, queue->name);
+			if(!finished_queue) 
+			{
+				finished_queue = queue;
+				if(queue) 
+					queue = queue->next;
+				else 
+					queue = NULL;
+			} 
+			
+			else 
+			{
+				for(itr = finished_queue; itr->next != NULL; itr = itr->next);
+				itr->next = queue;
+				if(queue)
+					queue = queue->next;
+				else 
+					queue = NULL;
+				itr->next = NULL;
+			}
+
+			if(queue)
+				fprintf(out, "Time %d: %s selected (burst %d)\n", i, queue->name, queue->burst);
+		}
+
+		if(queue) 
+		{
+			queue->time_ran++;
+			queue->burst--;
+			for(itr = queue->next; itr != NULL; itr = itr->next)
+				itr->time_waiting++;
+		}
+		else
+			fprintf(out, "Time %d: Idle\n", i);
+	}
+
+	fprintf(out, "Finished at time %d\n\n", run_for);
+
+	for(itr = finished_queue; itr != NULL; itr = itr->next)
+		fprintf(out, "%s wait %d turnaround %d\n", itr->name, itr->time_waiting, itr->time_ran + itr->time_waiting);
+	fclose(out);
+	return 0;
+}
 int round_robin(){
 	PROCESS *itr;
 	int i;
+	FILE *out;
+	out = fopen("processes.out", "w");
+
+	fprintf(out, "%d processes\n", process_count);
+	fprintf(out, "Using: %s\n", algo_strings[algorithm]);
+	fprintf(out, "Quantum: %d\n\n", quantum);
 
 	for(i = 0; i < run_for; i++) {
 			//Arrival
@@ -104,20 +187,20 @@ int round_robin(){
 				queue = arrived_queue;
 				arrived_queue = arrived_queue->next;
 				queue->next = NULL;
-				printf("Time %d: %s arrived\n", i, queue->name);
-				printf("Time %d: %s selected (burst %d)\n", i, queue->name, queue->burst);
+				fprintf(out, "Time %d: %s arrived\n", i, queue->name);
+				fprintf(out, "Time %d: %s selected (burst %d)\n", i, queue->name, queue->burst);
 			} else {
 				for(itr = queue; itr->next != NULL; itr = itr->next);
 				itr->next = arrived_queue;
 				arrived_queue = arrived_queue->next;
 				itr->next->next = NULL;
-				printf("Time %d: %s arrived\n", i, itr->next->name);
+				fprintf(out, "Time %d: %s arrived\n", i, itr->next->name);
 			}
 		}
 
 		// Process finished
 		if(queue && queue->burst == 0){
-			printf("Time %d: %s finished\n", i, queue->name);
+			fprintf(out, "Time %d: %s finished\n", i, queue->name);
 			//add finsihed process to finished queue
 			if(!finished_queue) {
 				finished_queue = queue;
@@ -132,9 +215,9 @@ int round_robin(){
 			}
 
 			if(queue)
-				printf("Time %d: %s selected (burst %d)\n", i, queue->name, queue->burst);
+				fprintf(out, "Time %d: %s selected (burst %d)\n", i, queue->name, queue->burst);
 		}
-		// Interrupt
+		//Interrupt
 		else if(queue && queue->time_ran != 0 && !(queue->time_ran % quantum)){
 			if(queue->next != NULL){
 				for(itr = queue; itr->next != NULL; itr = itr->next);
@@ -142,7 +225,7 @@ int round_robin(){
 				queue = queue->next;
 				itr->next->next = NULL;
 			}
-			printf("Time %d: %s selected (burst %d)\n", i, queue->name, queue->burst);
+			fprintf(out, "Time %d: %s selected (burst %d)\n", i, queue->name, queue->burst);
 		}
 
 		if(queue) {
@@ -151,14 +234,15 @@ int round_robin(){
 			for(itr = queue->next; itr != NULL; itr = itr->next)
 				itr->time_waiting++;
 		}
-		else printf("Time %d: Idle\n", i);
+		else fprintf(out, "Time %d: Idle\n", i);
 
 	}
 
-	printf("Finished at time %d\n\n", run_for);
+	fprintf(out, "Finished at time %d\n\n", run_for);
 
 	for(itr = finished_queue; itr != NULL; itr = itr->next)
-		printf("%s wait %d turnaround %d\n", itr->name, itr->time_waiting, itr->time_ran + itr->time_waiting);
+		fprintf(out, "%s wait %d turnaround %d\n", itr->name, itr->time_waiting, itr->time_ran + itr->time_waiting);
+	fclose(out);
 	return 0;
 }
 
@@ -174,16 +258,11 @@ int main(int argv, char *argc[]){
 	}
 
 	in = fopen(argc[1], "r");
-
 	parse(in);
-
-	printf("%d processes\n", process_count);
-	printf("Using: %s\n", algo_strings[algorithm]);
-	printf("Quantum: %d\n\n", quantum);
 
 	switch(algorithm){
 		case 0:
-			break;
+			First_Come_First_Serve();
 		case 1:
 			break;
 		case 2:
