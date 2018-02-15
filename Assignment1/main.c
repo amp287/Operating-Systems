@@ -1,3 +1,5 @@
+//Austin Peace Cray Winfrey Nick Macri
+//Group 17
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
@@ -131,21 +133,16 @@ int First_Come_First_Serve()
 			if(!finished_queue)
 			{
 				finished_queue = queue;
-				if(queue)
-					queue = queue->next;
-				else
-					queue = NULL;
+				queue = queue->next;
+				finished_queue->next = NULL;
 			}
 
 			else
 			{
 				for(itr = finished_queue; itr->next != NULL; itr = itr->next);
 				itr->next = queue;
-				if(queue)
-					queue = queue->next;
-				else
-					queue = NULL;
-				itr->next = NULL;
+				queue = queue->next;
+				itr->next->next = NULL;
 			}
 
 			if(queue)
@@ -170,6 +167,83 @@ int First_Come_First_Serve()
 	fclose(out);
 	return 0;
 }
+
+int shortest_job_first(){
+	PROCESS *itr;
+	FILE *out;
+	out = fopen("processes.out", "w");
+	int i;
+	fprintf(out, "%d processes\n", process_count);
+	fprintf(out, "Using: %s\n\n", algo_strings[algorithm]);
+
+	for(i = 0; i < run_for; i++) {
+			//Arrival
+		if(arrived_queue != NULL && arrived_queue->arrival == i) {
+			if(queue == NULL) {
+				queue = arrived_queue;
+				arrived_queue = arrived_queue->next;
+				queue->next = NULL;
+				fprintf(out, "Time %d: %s arrived\n", i, queue->name);
+				fprintf(out, "Time %d: %s selected (burst %d)\n", i, queue->name, queue->burst);
+			} else{
+				PROCESS *temp = NULL, *prev = NULL;
+
+				temp = arrived_queue;
+				arrived_queue = arrived_queue->next;
+				temp->next = NULL;
+
+				for(itr = queue; itr != NULL; itr = itr->next){
+					if(itr->burst > temp->burst){
+						temp->next = itr;
+						if(prev == NULL)
+							queue = temp;
+						else
+							prev->next = temp;
+							break;
+					}
+					prev = itr;
+				}
+				if(itr == NULL)
+					prev->next = temp;
+
+				fprintf(out, "Time %d: %s arrived\n", i, temp->name);
+				if(queue->time_ran == 0)
+					fprintf(out, "Time %d: %s selected (burst %d)\n", i , queue->name, queue->burst);
+			}
+		}
+
+		if(queue && queue->burst == 0) {
+			fprintf(out, "Time %d: %s finished\n", i, queue->name);
+			if(!finished_queue) {
+				finished_queue = queue;
+				queue = queue->next;
+				finished_queue->next = NULL;
+			} else {
+				for(itr = finished_queue; itr->next != NULL; itr = itr->next);
+				itr->next = queue;
+				queue = queue->next;
+				itr->next->next = NULL;
+			}
+			if(queue)
+				fprintf(out, "Time %d: %s selected (burst %d)\n", i, queue->name, queue->burst);
+		}
+
+		if(queue) {
+			queue->time_ran++;
+			queue->burst--;
+			for(itr = queue->next; itr != NULL; itr = itr->next)
+				itr->time_waiting++;
+		} else fprintf(out, "Time %d: Idle\n", i);
+	}
+
+	fprintf(out, "Finished at time %d\n\n", run_for);
+
+	for(itr = finished_queue; itr != NULL; itr = itr->next)
+		fprintf(out, "%s wait %d turnaround %d\n", itr->name, itr->time_waiting, itr->time_ran + itr->time_waiting);
+	fclose(out);
+	return 0;
+}
+
 int round_robin(){
 	PROCESS *itr;
 	int i;
@@ -204,14 +278,13 @@ int round_robin(){
 			//add finsihed process to finished queue
 			if(!finished_queue) {
 				finished_queue = queue;
-				if(queue) queue = queue->next;
-				else queue = NULL;
+				queue = queue->next;
+				finished_queue->next = NULL;
 			} else {
 				for(itr = finished_queue; itr->next != NULL; itr = itr->next);
 				itr->next = queue;
-				if(queue) queue = queue->next;
-				else queue = NULL;
-				itr->next = NULL;
+				queue = queue->next;
+				itr->next->next = NULL;
 			}
 
 			if(queue)
@@ -265,6 +338,7 @@ int main(int argv, char *argc[]){
 			First_Come_First_Serve();
 			break;
 		case 1:
+			shortest_job_first();
 			break;
 		case 2:
 			round_robin();
