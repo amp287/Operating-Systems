@@ -102,20 +102,20 @@ int First_Come_First_Serve()
 	fprintf(out, "%d processes\n", process_count);
 	fprintf(out, "Using: %s\n\n", algo_strings[algorithm]);
 
-	for(i = 0; i < run_for; i++) 
+	for(i = 0; i < run_for; i++)
 	{
-		if(arrived_queue != NULL && arrived_queue->arrival == i) 
+		if(arrived_queue != NULL && arrived_queue->arrival == i)
 		{
-			if(queue == NULL) 
+			if(queue == NULL)
 			{
 				queue = arrived_queue;
 				arrived_queue = arrived_queue->next;
 				queue->next = NULL;
 				fprintf(out, "Time %d: %s arrived\n", i, queue->name);
 				fprintf(out, "Time %d: %s selected (burst %d)\n", i, queue->name, queue->burst);
-			} 
+			}
 
-			else 
+			else
 			{
 				for(itr = queue; itr->next != NULL; itr = itr->next);
 				itr->next = arrived_queue;
@@ -128,22 +128,22 @@ int First_Come_First_Serve()
 		if(queue && queue->burst == 0)
 		{
 			fprintf(out, "Time %d: %s finished\n", i, queue->name);
-			if(!finished_queue) 
+			if(!finished_queue)
 			{
 				finished_queue = queue;
-				if(queue) 
+				if(queue)
 					queue = queue->next;
-				else 
+				else
 					queue = NULL;
-			} 
-			
-			else 
+			}
+
+			else
 			{
 				for(itr = finished_queue; itr->next != NULL; itr = itr->next);
 				itr->next = queue;
 				if(queue)
 					queue = queue->next;
-				else 
+				else
 					queue = NULL;
 				itr->next = NULL;
 			}
@@ -152,7 +152,7 @@ int First_Come_First_Serve()
 				fprintf(out, "Time %d: %s selected (burst %d)\n", i, queue->name, queue->burst);
 		}
 
-		if(queue) 
+		if(queue)
 		{
 			queue->time_ran++;
 			queue->burst--;
@@ -263,6 +263,7 @@ int main(int argv, char *argc[]){
 	switch(algorithm){
 		case 0:
 			First_Come_First_Serve();
+			break;
 		case 1:
 			break;
 		case 2:
