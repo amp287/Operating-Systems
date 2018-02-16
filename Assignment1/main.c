@@ -112,11 +112,37 @@ int First_Come_First_Serve()
 			{
 				queue = arrived_queue;
 				arrived_queue = arrived_queue->next;
-				queue->next = NULL;
-				fprintf(out, "Time %d: %s arrived\n", i, queue->name);
-				fprintf(out, "Time %d: %s selected (burst %d)\n", i, queue->name, queue->burst);
+				if(arrived_queue == queue->next)
+				{
+					queue->next = arrived_queue;
+					fprintf(out, "Time %d: %s arrived\n", i, queue->name);
+					fprintf(out, "Time %d: %s selected (burst %d)\n", i, queue->name, queue->burst);	
+				}
+				else
+				{
+					queue->next = NULL;
+					fprintf(out, "Time %d: %s arrived\n", i, queue->name);
+					fprintf(out, "Time %d: %s selected (burst %d)\n", i, queue->name, queue->burst);
+				}			
 			}
-
+			else if(queue != NULL && arrived_queue->next != NULL)
+			{
+				queue->next = arrived_queue;
+				queue->next->next = arrived_queue->next;
+				if(arrived_queue == queue->next)
+				{
+					queue->next = arrived_queue;
+					fprintf(out, "Time %d: %s arrived\n", i, queue->next->name);
+					fprintf(out, "Time %d: %s arrived\n", i, queue->next->next->name);
+					fprintf(out, "Time %d: %s selected (burst %d)\n", i, queue->name, queue->burst);	
+				}
+				else
+				{
+					queue->next = NULL;
+					fprintf(out, "Time %d: %s arrived\n", i, queue->name);
+					fprintf(out, "Time %d: %s selected (burst %d)\n", i, queue->name, queue->burst);
+				}
+			}
 			else
 			{
 				for(itr = queue; itr->next != NULL; itr = itr->next);
