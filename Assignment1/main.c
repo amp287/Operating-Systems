@@ -103,7 +103,7 @@ int First_Come_First_Serve()
 	int i;
 	fprintf(out, "%d processes\n", process_count);
 	fprintf(out, "Using: %s\n\n", algo_strings[algorithm]);
-
+    PROCESS *temp = NULL;
 	for(i = 0; i < run_for; i++)
 	{
 		if(arrived_queue != NULL && arrived_queue->arrival == i)
@@ -116,25 +116,37 @@ int First_Come_First_Serve()
 				{
 					queue->next = arrived_queue;
 					fprintf(out, "Time %d: %s arrived\n", i, queue->name);
-					fprintf(out, "Time %d: %s selected (burst %d)\n", i, queue->name, queue->burst);	
+					temp = queue;
+					while(temp->next != NULL)
+                    {
+					fprintf(out, "Time %d: %s arrived\n", i, temp->next->name);
+					temp = temp->next;
+                    }
+					fprintf(out, "Time %d: %s selected (burst %d)\n", i, queue->name, queue->burst);
 				}
 				else
 				{
 					queue->next = NULL;
 					fprintf(out, "Time %d: %s arrived\n", i, queue->name);
 					fprintf(out, "Time %d: %s selected (burst %d)\n", i, queue->name, queue->burst);
-				}			
+				}
 			}
 			else if(queue != NULL && arrived_queue->next != NULL)
 			{
+
 				queue->next = arrived_queue;
 				queue->next->next = arrived_queue->next;
 				if(arrived_queue == queue->next)
 				{
 					queue->next = arrived_queue;
-					fprintf(out, "Time %d: %s arrived\n", i, queue->next->name);
-					fprintf(out, "Time %d: %s arrived\n", i, queue->next->next->name);
-					fprintf(out, "Time %d: %s selected (burst %d)\n", i, queue->name, queue->burst);	
+
+					temp = queue;
+					while(temp->next != NULL)
+                    {
+					fprintf(out, "Time %d: %s arrived\n", i, temp->next->name);
+					temp = temp->next;
+                    }
+					//fprintf(out, "Time %d: %s arrived\n", i, queue->next->next->name);
 				}
 				else
 				{
