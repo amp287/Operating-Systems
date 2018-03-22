@@ -7,6 +7,7 @@
 
 #define DEVICE_NAME "MARIO"
 #define CLASS_NAME "ITSAME"
+#define SIZE 1024
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Austin Peace");
@@ -18,7 +19,7 @@ static struct class*  chardevClass  = NULL; ///< The device-driver class struct 
 static struct device* chardevDevice = NULL; ///< The device-driver device struct pointer
 
 static int size_of_message;
-static char   message[1024] = {0};
+static char   message[SIZE] = {0};
 
 static int dev_open(struct inode *, struct file *);
 static int dev_release(struct inode *, struct file *);
@@ -82,9 +83,22 @@ static int dev_open(struct inode *inodep, struct file *filep){
 }
 
 static ssize_t dev_read(struct file *filep, char *buffer, size_t len, loff_t *offset){
-   int error_count = 0;
-   // copy_to_user has the format ( * to, *from, size) and returns 0 on success
-   error_count = copy_to_user(buffer, message, size_of_message);
+   int error_count = 0, i, amt_to_read = 0;
+
+   if(size_of_message > len){
+         error_count = copy_to_user(buffer, message, len);
+         amt_to_read = len - error_count;
+   } else {
+        error_count = copy_to_user(buffer, message, size_of_message);
+        amt_to_read = size_of_message - error_count;
+  }
+
+  if(amt_to_read != 0){
+    for(i = amt_to_read; i < size_of_message; i++){
+      message[i - amt_to_read] = message[i];
+    }
+    size_of_message -= amt_to_read;
+  }
 
    if (error_count==0){            // if true then have success
       printk(KERN_INFO "chardev: Sent %d characters to the user\n", size_of_message);
@@ -97,10 +111,16 @@ static ssize_t dev_read(struct file *filep, char *buffer, size_t len, loff_t *of
 }
 
 static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, loff_t *offset){
-   sprintf(message, "%s(%zu letters)", buffer, len);   // appending received string with its length
-   size_of_message = strlen(message);                 // store the length of the stored message
-   printk(KERN_INFO "chardev: Received %zu characters from the user\n", len);
-   return len;
+  int i;
+
+  if(len + size_of_message > SIZE)
+    len = SIZE - size_of_message;
+
+  snprintf(message + size_of_message, len, "%s", buffer[i]);
+
+  size_of_message = size_of_message + len;                 // store the length of the stored message
+  printk(KERN_INFO "chardev: Received %zu characters from the user\n", len);
+  return len;
 }
 
 static int dev_release(struct inode *inodep, struct file *filep){
