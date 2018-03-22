@@ -4,6 +4,7 @@
 #include <linux/kernel.h>         // Contains types, macros, functions for the kernel
 #include <linux/fs.h>             // Header for the Linux file system support
 #include <linux/uaccess.h>          // Required for the copy to user function
+#include <linux/string.h>
 
 #define DEVICE_NAME "MARIO"
 #define CLASS_NAME "ITSAME"
@@ -116,10 +117,12 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
   if(len + size_of_message > SIZE)
     len = SIZE - size_of_message;
 
-  snprintf(message + size_of_message, len, "%s", buffer[i]);
+  memcpy(message + size_of_message, buffer, len);
 
   size_of_message = size_of_message + len;                 // store the length of the stored message
+
   printk(KERN_INFO "chardev: Received %zu characters from the user\n", len);
+
   return len;
 }
 
