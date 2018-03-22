@@ -102,8 +102,8 @@ static ssize_t dev_read(struct file *filep, char *buffer, size_t len, loff_t *of
   }
 
    if (error_count==0){            // if true then have success
-      printk(KERN_INFO "chardev: Sent %d characters to the user\n", size_of_message);
-      return (size_of_message=0);  // clear the position to the start and return 0
+      printk(KERN_INFO "chardev: Sent %d characters to the user\n", amt_to_read);
+      return amt_to_read;  // clear the position to the start and return 0
    }
    else {
       printk(KERN_INFO "chardev: Failed to send %d characters to the user\n", error_count);
@@ -112,8 +112,6 @@ static ssize_t dev_read(struct file *filep, char *buffer, size_t len, loff_t *of
 }
 
 static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, loff_t *offset){
-  int i;
-
   if(len + size_of_message > SIZE)
     len = SIZE - size_of_message;
 
