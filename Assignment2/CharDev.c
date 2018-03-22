@@ -6,8 +6,8 @@
 #include <linux/uaccess.h>          // Required for the copy to user function
 #include <linux/string.h>
 
-#define DEVICE_NAME "MARIO"
-#define CLASS_NAME "ITSAME"
+#define DEVICE_NAME "chardev"
+#define CLASS_NAME "chardev_class"
 #define SIZE 1024
 
 MODULE_LICENSE("GPL");
@@ -57,15 +57,15 @@ static int __init chardev_init(void){
   }
   printk(KERN_INFO "EBBChar: device class registered correctly\n");
 
-  // Register the device driver
-   chardevDevice = device_create(chardevClass, NULL, MKDEV(major_number, 0), NULL, DEVICE_NAME);
+  // Register the device driver (dont need this)
+   /*chardevDevice = device_create(chardevClass, NULL, MKDEV(major_number, 0), NULL, DEVICE_NAME);
    if (IS_ERR(chardevDevice)){               // Clean up if there is an error
       class_destroy(chardevClass);           // Repeated code but the alternative is goto statements
       unregister_chrdev(major_number, DEVICE_NAME);
       printk(KERN_ALERT "Failed to create the device\n");
       return PTR_ERR(chardevDevice);
    }
-   printk(KERN_INFO "EBBChar: device class created correctly\n"); // Made it! device was initialized
+   printk(KERN_INFO "EBBChar: device class created correctly\n"); // Made it! device was initialized*/
 
    return 0;
 }
